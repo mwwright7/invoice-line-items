@@ -10,6 +10,9 @@
 //	3 | Blue widget | 12.50
 //	1 | Installation fee | 45.00
 //
+// A description that needs to contain a literal '|' can escape it as
+// '\|'. A literal backslash is written as '\\'.
+//
 // Money is kept as whole cents (Cents) rather than float64 so that sums
 // and formatted output never drift from what was typed in.
 package lineitem
@@ -52,9 +55,9 @@ func Validate(li LineItem) error {
 }
 
 // ParseLine parses a single "qty | description | unit price" record and
-// validates the result.
+// validates the result. A '|' inside a field must be escaped as '\|'.
 func ParseLine(line string) (LineItem, error) {
-	fields := strings.Split(line, "|")
+	fields := splitEscaped(line)
 	if len(fields) != 3 {
 		return LineItem{}, fmt.Errorf("expected 3 fields separated by '|', got %d", len(fields))
 	}
@@ -104,6 +107,47 @@ func ParseDocument(text string) ([]LineItem, error) {
 		return items, errors.New(strings.Join(problems, "; "))
 	}
 	return items, nil
+}
+
+// splitEscaped splits line on '|', treating a backslash as an escape
+// character: '\|' yields a literal '|' instead of a field boundary, and
+// '\\' yields a literal '\'. A backslash before any other character is
+// dropped and the character is kept as-is. A trailing unmatched
+// backslash is kept literally.
+func splitEscaped(line string) []string {
+	var fields []string
+	var cur strings.Builder
+
+	escaped := false
+	for i := 0; i < len(line); i++ {
+		c := line[i]
+		switch {
+		case escaped:
+			cur.WriteByte(c)
+			escaped = false
+		case c == '\\':
+			escaped = true
+		case c == '|':
+			fields = append(fields, cur.String())
+			cur.Reset()
+		default:
+			cur.WriteByte(c)
+		}
+	}
+	if escaped {
+		cur.WriteByte('\\')
+	}
+	fields = append(fields, cur.String())
+	return fields
+}
+
+// EscapeField escapes '|' and '\' in s so it can be written back into a
+// single field of the "qty | description | unit price" line format
+// without being mistaken for a field separator.
+func EscapeField(s string) string {
+	s = strings.ReplaceAll(s, `\`, `\\`)
+	s = strings.ReplaceAll(s, `|`, `\|`)
+	return s
 }
 
 // ParseCents parses a decimal string such as "12.50" or "12" into whole

@@ -29,6 +29,14 @@ Quantity must be a positive integer, description must be non-empty
 after trimming whitespace, and unit price must be zero or positive
 with at most two decimal places.
 
+If a description needs to contain a literal `|`, escape it as `\|`
+(and a literal backslash as `\\`). `EscapeField` does this escaping
+for you when building a line from a description you don't control:
+
+```go
+line := fmt.Sprintf("1 | %s | 12.50", lineitem.EscapeField(desc))
+```
+
 ## Usage
 
 ```go
@@ -82,7 +90,6 @@ below for what's planned.
 
 ## Roadmap
 
-- Escape or quote the `|` separator so descriptions can contain it
 - CSV import/export
 - Optional currency symbol in `Format` output
 - JSON encoding for `LineItem`

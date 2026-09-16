@@ -1,6 +1,7 @@
 package lineitem
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -31,6 +32,40 @@ func TestParseLineRejectsBadInput(t *testing.T) {
 		if _, err := ParseLine(c); err == nil {
 			t.Errorf("ParseLine(%q): expected error, got none", c)
 		}
+	}
+}
+
+func TestParseLineEscapedPipeInDescription(t *testing.T) {
+	li, err := ParseLine(`2 | Widget \| Deluxe | 5.00`)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := "Widget | Deluxe"
+	if li.Description != want {
+		t.Fatalf("Description = %q, want %q", li.Description, want)
+	}
+}
+
+func TestParseLineEscapedBackslashInDescription(t *testing.T) {
+	li, err := ParseLine(`1 | C:\Program Files\\ | 5.00`)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := `C:Program Files\`
+	if li.Description != want {
+		t.Fatalf("Description = %q, want %q", li.Description, want)
+	}
+}
+
+func TestEscapeFieldRoundTrips(t *testing.T) {
+	desc := `Widget | Deluxe \ Edition`
+	line := fmt.Sprintf("1 | %s | 5.00", EscapeField(desc))
+	li, err := ParseLine(line)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if li.Description != desc {
+		t.Fatalf("Description = %q, want %q", li.Description, desc)
 	}
 }
 
