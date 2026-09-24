@@ -9,6 +9,14 @@ import (
 // row. It is a pure function: the same items always produce the same
 // string, which makes it easy to test with plain string comparisons.
 func Format(items []LineItem) string {
+	return FormatCurrency(items, "")
+}
+
+// FormatCurrency renders the same table as Format, but with symbol
+// prefixed to every money value (unit price, amount, and the total).
+// symbol is written as-is, so callers can pass "$", "€", "USD ", or
+// anything else without this package needing to know about currencies.
+func FormatCurrency(items []LineItem, symbol string) string {
 	if len(items) == 0 {
 		return "(no line items)\n"
 	}
@@ -28,8 +36,8 @@ func Format(items []LineItem) string {
 		rows[i] = row{
 			qty:    fmt.Sprintf("%d", li.Quantity),
 			desc:   li.Description,
-			price:  li.UnitPrice.String(),
-			amount: amount.String(),
+			price:  symbol + li.UnitPrice.String(),
+			amount: symbol + amount.String(),
 		}
 		qtyW = maxWidth(qtyW, len(rows[i].qty))
 		descW = maxWidth(descW, len(rows[i].desc))
@@ -44,7 +52,7 @@ func Format(items []LineItem) string {
 		writeRow(&b, qtyW, descW, priceW, amountW, r.qty, r.desc, r.price, r.amount)
 	}
 	writeSeparator(&b, qtyW, descW, priceW, amountW)
-	writeRow(&b, qtyW, descW, priceW, amountW, "", "Total", "", total.String())
+	writeRow(&b, qtyW, descW, priceW, amountW, "", "Total", "", symbol+total.String())
 
 	return b.String()
 }
