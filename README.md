@@ -72,6 +72,19 @@ Qty  Description        Unit Price  Amount
      Total                            70.00
 ```
 
+## JSON
+
+`LineItem` implements `json.Marshaler` and `json.Unmarshaler`:
+
+```json
+{"quantity":3,"description":"Blue widget","unit_price":"12.50"}
+```
+
+The unit price is written as a decimal string so it survives consumers
+that would otherwise read it as a float. On input, a JSON number
+(`12.5`) is also accepted. Decoding runs `Validate`, so a `LineItem`
+read from JSON has passed the same checks as one from `ParseLine`.
+
 ## Design notes
 
 - `ParseLine` and `ParseDocument` never mutate anything and never touch
@@ -90,9 +103,7 @@ below for what's planned.
 
 ## Roadmap
 
-- CSV import/export
-- Optional currency symbol in `Format` output
-- JSON encoding for `LineItem`
+- Multi-currency line items
 
 ## License
 
